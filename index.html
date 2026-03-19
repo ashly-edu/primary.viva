@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Viva Tracker">
+<meta name="theme-color" content="#0f1117">
+<title>ANZCA Viva Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #181c27;
+    --bg3: #1e2235;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f2f7;
+    --text2: #8b90a4;
+    --text3: #545869;
+    --accent: #4f8ef7;
+    --accent-dim: rgba(79,142,247,0.15);
+    --green: #2ec27e;
+    --green-dim: rgba(46,194,126,0.15);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.15);
+    --red: #e85d5d;
+    --red-dim: rgba(232,93,93,0.15);
+    --radius: 14px;
+    --radius-sm: 9px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding-top: var(--safe-top);
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 16px 20px 12px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 0.5px solid var(--border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(15,17,23,0.9);
+  }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 12px; color: var(--text2); margin-top: 1px; }
+
+  /* NAV TABS */
+  .nav {
+    display: flex;
+    background: var(--bg);
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    padding-bottom: var(--safe-bottom);
+    border-top: 0.5px solid var(--border);
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(15,17,23,0.94);
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 4px 8px;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 10px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn .badge-dot {
+    position: absolute;
+    width: 7px; height: 7px;
+    background: var(--red);
+    border-radius: 50%;
+    top: 6px; right: calc(50% - 18px);
+  }
+  .nav-btn { position: relative; }
+
+  /* MAIN CONTENT */
+  .main {
+    padding: 16px 16px 100px;
+  }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+  .stat-val { font-size: 28px; font-weight: 700; margin-top: 4px; letter-spacing: -1px; }
+  .stat-val.accent { color: var(--accent); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.green { color: var(--green); }
+
+  /* PROGRESS */
+  .progress-wrap { margin-bottom: 20px; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 7px; }
+  .progress-bar { height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s ease; }
+
+  /* SECTION HEADERS */
+  .section-hd {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; margin-top: 20px;
+  }
+  .section-hd h2 { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .section-hd button { font-size: 12px; color: var(--accent); background: none; border: none; font-family: inherit; cursor: pointer; }
+
+  /* TOPIC CARDS */
+  .topic-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+    -webkit-user-select: none;
+  }
+  .topic-card:active { background: var(--bg3); }
+  .topic-card.due { border-left: 3px solid var(--red); }
+  .topic-card.soon { border-left: 3px solid var(--amber); }
+  .topic-card.reviewed { border-left: 3px solid var(--green); }
+  .topic-main { flex: 1; min-width: 0; }
+  .topic-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topic-meta { font-size: 11px; color: var(--text2); margin-top: 3px; display: flex; gap: 8px; align-items: center; }
+  .conf-pill {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.2px;
+  }
+  .conf-weak { background: var(--red-dim); color: var(--red); }
+  .conf-ok { background: var(--amber-dim); color: var(--amber); }
+  .conf-strong { background: var(--green-dim); color: var(--green); }
+  .conf-new { background: var(--bg3); color: var(--text3); }
+  .review-count { font-size: 11px; color: var(--text3); }
+  .chevron { color: var(--text3); flex-shrink: 0; }
+
+  /* SEARCH & FILTERS */
+  .search-wrap { position: relative; margin-bottom: 12px; }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px 10px 38px;
+    font-size: 14px;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+  }
+  .search-wrap input::placeholder { color: var(--text3); }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); }
+  .filter-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+  .filter-scroll::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    border: 0.5px solid var(--border2);
+    background: none;
+    color: var(--text2);
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 50px 20px; color: var(--text3); }
+  .empty .icon { font-size: 36px; margin-bottom: 10px; }
+  .empty p { font-size: 14px; }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: calc(70px + var(--safe-bottom));
+    right: 20px;
+    width: 52px; height: 52px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(79,142,247,0.4);
+    z-index: 90;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: scale(0.93); }
+
+  /* BOTTOM SHEET / MODAL */
+  .sheet-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: all; }
+  .sheet {
+    background: var(--bg2);
+    border-radius: 22px 22px 0 0;
+    padding: 12px 20px calc(28px + var(--safe-bottom));
+    width: 100%;
+    max-height: 90dvh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  }
+  .sheet-backdrop.open .sheet { transform: translateY(0); }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+  .sheet h2 { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+
+  /* FORM FIELDS */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    appearance: none;
+  }
+  .field textarea { height: 140px; resize: none; font-size: 13px; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+
+  /* INTERVAL PRESETS */
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .preset-btn {
+    padding: 6px 12px;
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500;
+    color: var(--text2);
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .preset-btn:active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  /* CONF SELECTOR */
+  .conf-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .conf-opt {
+    padding: 10px 6px;
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border2);
+    text-align: center;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    background: var(--bg3);
+    color: var(--text2);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .conf-opt.sel-weak { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+  .conf-opt.sel-ok { background: var(--amber-dim); color: var(--amber); border-color: var(--amber); }
+  .conf-opt.sel-strong { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+  .btn {
+    flex: 1; padding: 14px;
+    border-radius: var(--radius);
+    font-size: 15px; font-weight: 600;
+    border: none; cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: var(--bg3); color: var(--text2); }
+  .btn-danger { background: var(--red-dim); color: var(--red); }
+
+  /* IMPORT PANEL */
+  .import-section {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .import-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .import-section p { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
+  .file-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 12px;
+    background: var(--bg3);
+    border: 0.5px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 500; color: var(--accent);
+    cursor: pointer; font-family: inherit;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: calc(80px + var(--safe-bottom));
+    left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    z-index: 500;
+    opacity: 0;
+    transition: all 0.25s;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* SWIPE DELETE HINT */
+  .delete-row { display: flex; gap: 10px; margin-top: 12px; }
+
+  /* Due today banner */
+  .due-banner {
+    background: var(--red-dim);
+    border: 0.5px solid rgba(232,93,93,0.25);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .due-banner .num { font-size: 24px; font-weight: 700; color: var(--red); }
+  .due-banner .lbl { font-size: 12px; color: var(--text2); }
+  .due-banner .lbl b { color: var(--text); display: block; font-size: 14px; }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f6fa;
+      --bg2: #ffffff;
+      --bg3: #eef0f5;
+      --border: rgba(0,0,0,0.08);
+      --border2: rgba(0,0,0,0.13);
+      --text: #1a1c25;
+      --text2: #5c6178;
+      --text3: #aab0c4;
+    }
+    body { background: var(--bg); }
+    .header { background: rgba(245,246,250,0.9); }
+    .nav { background: rgba(245,246,250,0.94); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ANZCA Viva Tracker</h1>
+  <div class="subtitle" id="header-sub">Loading...</div>
+</div>
+
+<!-- PANELS -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div id="panel-dash" class="panel active">
+    <div id="due-banner-wrap"></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val accent" id="s-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Reviewed</div><div class="stat-val green" id="s-done">0</div></div>
+      <div class="stat-card"><div class="stat-label">Due today</div><div class="stat-val red" id="s-due">0</div></div>
+      <div class="stat-card"><div class="stat-label">This week</div><div class="stat-val" id="s-week">0</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="prog-label">Progress</span><span id="prog-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="section-hd"><h2>Due now</h2><button onclick="showPanel('due')">See all →</button></div>
+    <div id="dash-due-list"></div>
+  </div>
+
+  <!-- ALL TOPICS -->
+  <div id="panel-topics" class="panel">
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="Search topics…" oninput="renderTopics()">
+    </div>
+    <div class="filter-scroll" id="cat-chips"></div>
+    <div class="filter-scroll" id="conf-chips">
+      <button class="chip active" data-v="all" onclick="setFilter(this,'conf')">All</button>
+      <button class="chip" data-v="new" onclick="setFilter(this,'conf')">Not started</button>
+      <button class="chip" data-v="weak" onclick="setFilter(this,'conf')">Weak</button>
+      <button class="chip" data-v="ok" onclick="setFilter(this,'conf')">Ok</button>
+      <button class="chip" data-v="strong" onclick="setFilter(this,'conf')">Strong</button>
+    </div>
+    <div id="topics-list"></div>
+  </div>
+
+  <!-- DUE -->
+  <div id="panel-due" class="panel">
+    <div id="due-list"></div>
+  </div>
+
+  <!-- IMPORT / SETTINGS -->
+  <div id="panel-import" class="panel">
+    <div class="import-section">
+      <h3>Paste topic list</h3>
+      <p>One topic per line. Add an optional category label below, then tap Import.</p>
+      <div class="field"><textarea id="paste-input" placeholder="Pharmacokinetics&#10;Pharmacodynamics&#10;Acid-base balance&#10;..."></textarea></div>
+      <div class="field"><label>Category (optional)</label><input type="text" id="import-cat" placeholder="e.g. Pharmacology"></div>
+      <button class="btn btn-primary" onclick="importPaste()">Import topics</button>
+    </div>
+
+    <div class="import-section">
+      <h3>Upload CSV</h3>
+      <p>CSV must have a <b>topic</b> column. Optional <b>category</b> column also supported.</p>
+      <button class="file-btn" onclick="document.getElementById('csv-file').click()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Choose CSV file
+      </button>
+      <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="importCSV(this)">
+    </div>
+
+    <div class="import-section">
+      <h3>Backup &amp; restore</h3>
+      <p>Export your data as JSON to back up or transfer between devices.</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" style="flex:1" onclick="exportData()">Export JSON</button>
+        <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('json-file').click()">Import JSON</button>
+        <input type="file" id="json-file" accept=".json" style="display:none" onchange="importJSON(this)">
+      </div>
+    </div>
+
+    <div class="import-section">
+      <h3 style="color:var(--red)">Danger zone</h3>
+      <button class="btn btn-danger" onclick="clearAll()" style="width:100%">Clear all data</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- FAB (add topic) -->
+<button class="fab" id="fab" onclick="openAdd()">+</button>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-dash" onclick="showPanel('dash')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    Dashboard
+  </button>
+  <button class="nav-btn" id="nav-topics" onclick="showPanel('topics')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg>
+    Topics
+  </button>
+  <button class="nav-btn" id="nav-due" onclick="showPanel('due')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Due
+    <span class="badge-dot" id="due-dot" style="display:none"></span>
+  </button>
+  <button class="nav-btn" id="nav-import" onclick="showPanel('import')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Import
+  </button>
+</nav>
+
+<!-- BOTTOM SHEET -->
+<div class="sheet-backdrop" id="sheet-backdrop" onclick="closeSheet(event)">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div id="sheet-content"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const STORE = 'anzca_viva_v2';
+let topics = [];
+let activeConf = 'all';
+let activeCat = 'all';
+let currentSheetId = null;
+
+function today(){ return new Date().toISOString().slice(0,10); }
+function addDays(d,n){ const dt=new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function save(){
+  localStorage.setItem(STORE, JSON.stringify(topics));
+  try{ window.storage && window.storage.set(STORE, JSON.stringify(topics)); }catch(e){}
+}
+
+async function load(){
+  let raw = localStorage.getItem(STORE);
+  if(!raw){ try{ const r=await window.storage.get(STORE); if(r&&r.value) raw=r.value; }catch(e){} }
+  if(raw){ try{ topics=JSON.parse(raw); }catch(e){ topics=[]; } }
+  renderAll();
+}
+
+function statusOf(t){
+  if(!t.nextReview) return 'new';
+  const tod=today();
+  if(t.nextReview<=tod) return 'due';
+  if(t.nextReview<=addDays(tod,3)) return 'soon';
+  return 'ok';
+}
+
+function cardClass(t){
+  const s=statusOf(t);
+  if(s==='due') return 'topic-card due';
+  if(s==='soon') return 'topic-card soon';
+  if(t.lastReview) return 'topic-card reviewed';
+  return 'topic-card';
+}
+
+function confPill(c){
+  if(c==='weak') return '<span class="conf-pill conf-weak">Weak</span>';
+  if(c==='ok') return '<span class="conf-pill conf-ok">Ok</span>';
+  if(c==='strong') return '<span class="conf-pill conf-strong">Strong</span>';
+  return '<span class="conf-pill conf-new">New</span>';
+}
+
+function topicCard(t){
+  const s=statusOf(t);
+  const nextLbl = t.nextReview ? (s==='due'?`<span style="color:var(--red)">Overdue: ${t.nextReview}</span>`:`Next: ${t.nextReview}`) : 'Not reviewed yet';
+  return `<div class="${cardClass(t)}" onclick="openReview('${t.id}')">
+    <div class="topic-main">
+      <div class="topic-name">${t.name}</div>
+      <div class="topic-meta">
+        ${confPill(t.confidence||'')}
+        <span class="review-count">${t.reviewCount||0}× reviewed</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${t.category?`<span style="color:var(--text2)">${t.category}</span> · `:``}${nextLbl}</div>
+    </div>
+    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>`;
+}
+
+function renderAll(){ renderStats(); renderTopics(); renderDue(); updateCatChips(); }
+
+function renderStats(){
+  const tot=topics.length, done=topics.filter(t=>t.lastReview).length;
+  const tod=today();
+  const due=topics.filter(t=>t.nextReview&&t.nextReview<=tod).length;
+  const week=topics.filter(t=>t.nextReview&&t.nextReview<=addDays(tod,7)).length;
+  document.getElementById('s-total').textContent=tot;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-due').textContent=due;
+  document.getElementById('s-week').textContent=week;
+  const pct=tot?Math.round(done/tot*100):0;
+  document.getElementById('prog-label').textContent=`${done} of ${tot} reviewed`;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('header-sub').textContent=`${tot} topics · ${pct}% done`;
+  // due dot
+  document.getElementById('due-dot').style.display=due>0?'block':'none';
+  // due banner
+  const dueItems=topics.filter(t=>t.nextReview&&t.nextReview<=tod);
+  const db=document.getElementById('due-banner-wrap');
+  db.innerHTML=due>0?`<div class="due-banner"><div class="num">${due}</div><div class="lbl"><b>Topics due today</b>Tap "Due" to start reviewing</div></div>`:'';
+  // dash due list
+  const ddl=document.getElementById('dash-due-list');
+  const preview=dueItems.slice(0,4);
+  ddl.innerHTML=preview.length?preview.map(topicCard).join('')+'<br>':`<div class="empty"><div class="icon">✓</div><p>Nothing due — you're all caught up!</p></div>`;
+}
+
+function renderTopics(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  let list=topics.filter(t=>{
+    if(q&&!t.name.toLowerCase().includes(q)&&!(t.category||'').toLowerCase().includes(q)) return false;
+    if(activeCat!=='all'&&t.category!==activeCat) return false;
+    if(activeConf==='new'&&t.lastReview) return false;
+    if(activeConf==='weak'&&t.confidence!=='weak') return false;
+    if(activeConf==='ok'&&t.confidence!=='ok') return false;
+    if(activeConf==='strong'&&t.confidence!=='strong') return false;
+    return true;
+  });
+  const el=document.getElementById('topics-list');
+  el.innerHTML=list.length?list.map(topicCard).join(''):`<div class="empty"><div class="icon">○</div><p>No topics match your filters.</p></div>`;
+}
+
+function renderDue(){
+  const tod=today();
+  const due=topics.filter(t=>!t.nextReview||t.nextReview<=tod);
+  const el=document.getElementById('due-list');
+  el.innerHTML=due.length?due.map(topicCard).join(''):`<div class="empty"><div class="icon">✓</div><p>Nothing due right now.</p></div>`;
+}
+
+function updateCatChips(){
+  const cats=[...new Set(topics.map(t=>t.category).filter(Boolean))].sort();
+  const el=document.getElementById('cat-chips');
+  el.innerHTML=`<button class="chip${activeCat==='all'?' active':''}" data-v="all" onclick="setFilter(this,'cat')">All</button>`
+    +cats.map(c=>`<button class="chip${activeCat===c?' active':''}" data-v="${c}" onclick="setFilter(this,'cat')">${c}</button>`).join('');
+}
+
+function setFilter(el,type){
+  if(type==='cat'){
+    document.querySelectorAll('#cat-chips .chip').forEach(e=>e.classList.remove('active'));
+    activeCat=el.dataset.v;
+  } else {
+    document.querySelectorAll('#conf-chips .chip').forEach(e=>e.classList.remove('active'));
+    activeConf=el.dataset.v;
+  }
+  el.classList.add('active');
+  renderTopics();
+}
+
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  document.getElementById('fab').style.display=(name==='topics'||name==='dash')?'flex':'none';
+  if(name==='topics') renderTopics();
+  if(name==='due') renderDue();
+  if(name==='dash') renderStats();
+}
+
+// SHEET
+function openSheet(html){
+  document.getElementById('sheet-content').innerHTML=html;
+  document.getElementById('sheet-backdrop').classList.add('open');
+}
+function closeSheet(e){
+  if(!e||e.target===document.getElementById('sheet-backdrop')){
+    document.getElementById('sheet-backdrop').classList.remove('open');
+  }
+}
+
+function openAdd(){
+  const cats=[...new Set(topics.map(t=>t.category).filter(Boolean))].sort();
+  openSheet(`<h2>Add topic</h2>
+    <div class="field"><label>Topic name</label><input type="text" id="m-name" placeholder="e.g. Pharmacokinetics" autofocus></div>
+    <div class="field"><label>Category</label><input type="text" id="m-cat" list="cat-dl" placeholder="e.g. Pharmacology"><datalist id="cat-dl">${cats.map(c=>`<option value="${c}">`).join('')}</datalist></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet()">Cancel</button>
+      <button class="btn btn-primary" onclick="addTopic()">Add topic</button>
+    </div>`);
+}
+
+function addTopic(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name){ toast('Enter a topic name'); return; }
+  const cat=document.getElementById('m-cat').value.trim();
+  topics.push({id:uid(),name,category:cat,lastReview:null,nextReview:null,confidence:'',reviewCount:0});
+  save(); renderAll(); closeSheet();
+  toast('Topic added');
+}
+
+function openReview(id){
+  currentSheetId=id;
+  const t=topics.find(x=>x.id===id);
+  if(!t) return;
+  const confSel=(v)=>['weak','ok','strong'].map(c=>`<button class="conf-opt${t.confidence===c?' sel-'+c:''}" id="copt-${c}" onclick="selConf('${c}')">${c.charAt(0).toUpperCase()+c.slice(1)}</button>`).join('');
+  openSheet(`<h2>${t.name}</h2>
+    ${t.category?`<p style="font-size:12px;color:var(--text2);margin-top:-12px;margin-bottom:16px">${t.category}</p>`:''}
+    <div class="field"><label>Review date</label><input type="date" id="m-date" value="${today()}"></div>
+    <div class="field"><label>Next review date</label>
+      <input type="date" id="m-next" value="${addDays(today(),7)}">
+      <div class="presets">
+        <button class="preset-btn" onclick="setNext(1)">Tomorrow</button>
+        <button class="preset-btn" onclick="setNext(3)">3 days</button>
+        <button class="preset-btn" onclick="setNext(7)">1 week</button>
+        <button class="preset-btn" onclick="setNext(14)">2 weeks</button>
+        <button class="preset-btn" onclick="setNext(30)">1 month</button>
+      </div>
+    </div>
+    <div class="field"><label>Confidence</label>
+      <div class="conf-row">${confSel(t.confidence)}</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="deleteTopic('${id}')">Delete</button>
+      <button class="btn btn-primary" onclick="saveReview('${id}')">Save</button>
+    </div>`);
+}
+
+function selConf(v){
+  ['weak','ok','strong'].forEach(c=>{
+    const el=document.getElementById('copt-'+c);
+    if(el) el.className='conf-opt'+(c===v?' sel-'+c:'');
+  });
+}
+
+function getSelConf(){
+  for(const c of ['weak','ok','strong']){
+    const el=document.getElementById('copt-'+c);
+    if(el&&el.className.includes('sel-')) return c;
+  }
+  return '';
+}
+
+function setNext(n){ document.getElementById('m-next').value=addDays(today(),n); }
+
+function saveReview(id){
+  const t=topics.find(x=>x.id===id); if(!t) return;
+  t.lastReview=document.getElementById('m-date').value;
+  t.nextReview=document.getElementById('m-next').value;
+  t.confidence=getSelConf();
+  t.reviewCount=(t.reviewCount||0)+1;
+  save(); renderAll(); closeSheet();
+  toast('Review saved ✓');
+}
+
+function deleteTopic(id){
+  if(!confirm('Delete this topic?')) return;
+  topics=topics.filter(t=>t.id!==id);
+  save(); renderAll(); closeSheet();
+  toast('Topic deleted');
+}
+
+// IMPORT
+function importPaste(){
+  const raw=document.getElementById('paste-input').value;
+  const cat=document.getElementById('import-cat').value.trim();
+  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  let added=0,skipped=0;
+  lines.forEach(name=>{
+    if(topics.find(t=>t.name.toLowerCase()===name.toLowerCase())){ skipped++; return; }
+    topics.push({id:uid(),name,category:cat,lastReview:null,nextReview:null,confidence:'',reviewCount:0});
+    added++;
+  });
+  save(); renderAll();
+  document.getElementById('paste-input').value='';
+  toast(`Added ${added}${skipped?' ('+skipped+' skipped)':''}`);
+}
+
+function importCSV(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const lines=e.target.result.split('\n');
+    const headers=lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/"/g,''));
+    const ti=headers.indexOf('topic'), ci=headers.indexOf('category');
+    if(ti<0){ toast('CSV needs a "topic" column'); return; }
+    let added=0,skipped=0;
+    for(let i=1;i<lines.length;i++){
+      const cols=lines[i].split(',').map(c=>c.trim().replace(/"/g,''));
+      const name=cols[ti]; if(!name) continue;
+      const cat=ci>=0?(cols[ci]||''):'';
+      if(topics.find(t=>t.name.toLowerCase()===name.toLowerCase())){ skipped++; continue; }
+      topics.push({id:uid(),name,category:cat,lastReview:null,nextReview:null,confidence:'',reviewCount:0});
+      added++;
+    }
+    save(); renderAll();
+    toast(`Added ${added}${skipped?' ('+skipped+' skipped)':''}`);
+  };
+  reader.readAsText(file); input.value='';
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(topics,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='viva_tracker_backup.json'; a.click();
+  toast('Exported!');
+}
+
+function importJSON(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!Array.isArray(data)) throw new Error();
+      topics=data; save(); renderAll();
+      toast(`Restored ${data.length} topics`);
+    }catch(e){ toast('Invalid backup file'); }
+  };
+  reader.readAsText(file); input.value='';
+}
+
+function clearAll(){
+  if(!confirm('Delete ALL topics and review history? This cannot be undone.')) return;
+  topics=[]; save(); renderAll(); toast('All data cleared');
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+load();
+
+// Register service worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
